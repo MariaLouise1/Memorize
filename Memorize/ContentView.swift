@@ -14,38 +14,50 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
-            HStack {
-                ForEach(0..<cardCount, id: \.self) { index in
-                    CardView(content: emojis[index])
-                }
+            ScrollView {
+                cardGenerator
             }
-            .foregroundColor(.orange)
-        
-            HStack {
-                Button(action: {
-                    if cardCount > 1 {
-                        cardCount -= 1
-                    }
-                }, label: {
-                        Image(systemName: "folder.fill.badge.minus")
-                })
-                .imageScale(.large)
-                .font(.largeTitle)
-                .foregroundColor(.black)
-                Spacer()
-                Button(action: {
-                    if cardCount < emojis.count {
-                        cardCount += 1
-                    }
-                }, label: {
-                        Image(systemName: "folder.fill.badge.plus")
-                })
-                .imageScale(.large)
-                .font(.largeTitle)
-                .foregroundColor(.black)
-            }
+            cardAdjustor
         }
         .padding()
+    }
+    
+    var cardAdjustor: some View {
+        HStack {
+            cardRemover
+            Spacer()
+            cardAdder
+        }
+        .imageScale(.large)
+        .font(.largeTitle)
+        .foregroundColor(.black)
+    }
+    
+    var cardGenerator: some View {
+        LazyVGrid (columns: [GridItem(.adaptive(minimum: 120))]) {
+            ForEach(0..<cardCount, id: \.self) { index in
+                CardView(content: emojis[index])
+                    .aspectRatio(2/3, contentMode: .fit)
+            }
+        }
+        .foregroundColor(.orange)
+    }
+    
+    func cardCountAdjustor(by offset: Int, symbol: String) -> some View {
+        Button(action: {
+            cardCount += offset
+        }, label: {
+                Image(systemName: symbol)
+        })
+        .disabled(cardCount + offset < 1 || cardCount + offset > emojis.count)
+    }
+    
+    var cardRemover: some View {
+        return cardCountAdjustor(by: -1, symbol: "folder.fill.badge.minus")
+    }
+    
+    var cardAdder: some View {
+        return cardCountAdjustor(by: +1, symbol: "folder.fill.badge.plus")
     }
 }
 
@@ -57,13 +69,13 @@ struct CardView: View {
     var body: some View {
         ZStack {
             let base = RoundedRectangle(cornerRadius: 12)
-            if isFaceUp {
+            Group {
                 base.fill(.white)
                 base.strokeBorder(lineWidth: 10)
                 Text(content).font(.largeTitle)
-            } else {
-                base.fill()
             }
+            .opacity(isFaceUp ? 1 : 0 )
+            base.fill().opacity(isFaceUp ? 0 : 1)
         }
         .onTapGesture {
             isFaceUp.toggle()
